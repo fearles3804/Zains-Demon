@@ -1,1 +1,44 @@
+name: Build Zain's Demon
 
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JUCE
+        uses: actions/checkout@v4
+        with:
+          repository: juce-framework/JUCE
+          path: JUCE
+
+      - name: Configure
+        run: cmake -S . -B build -DJUCE_DIR="${{ github.workspace }}/JUCE"
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Package VST3
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts
+          $vst3 = Get-ChildItem -Path build -Filter "*.vst3" -Recurse | Select-Object -First 1
+          if ($null -eq $vst3) {
+            Write-Error "VST3 bulunamadı."
+            exit 1
+          }
+          Compress-Archive -Path $vst3.FullName -DestinationPath "artifacts/Zains-Demon-VST3.zip"
+
+      - name: Upload VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zains-Demon-VST3
+          path: artifacts/Zains-Demon-VST3.zip
