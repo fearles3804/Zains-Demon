@@ -188,3 +188,8 @@ ZainsDemonAudioProcessor::createEditor()
 {
     return new ZainsDemonAudioProcessorEditor(*this);
 }
+
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
+{
+    return new ZainsDemonAudioProcessor();
+}
