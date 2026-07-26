@@ -17,7 +17,7 @@ add_subdirectory(${JUCE_DIR} JUCE)
 # Plugin oluştur
 juce_add_plugin(ZainsDemon
     COMPANY_NAME "Zain"
-    PRODUCT_NAME "Zain's Demon"
+    PRODUCT_NAME "Zains Demon"
 
     PLUGIN_MANUFACTURER_CODE Zain
     PLUGIN_CODE ZDem
