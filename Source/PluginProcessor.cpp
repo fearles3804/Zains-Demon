@@ -11,7 +11,8 @@ ZainsDemonAudioProcessor::ZainsDemonAudioProcessor()
 {
 }
 
-juce::AudioProcessorValueTreeState::ParameterLayout ZainsDemonAudioProcessor::createParameterLayout()
+juce::AudioProcessorValueTreeState::ParameterLayout
+ZainsDemonAudioProcessor::createParameterLayout()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> p;
 
@@ -110,21 +111,31 @@ void ZainsDemonAudioProcessor::processBlock(
     pitchShifter.setSemitones(semitones * demon);
     pitchShifter.process(buffer);
 
+    // Demon distortion / saturation
     const float amount = 1.0f + drive * 18.0f;
 
-    // JUCE'nin Function tipine uygun şekilde std::function kullanıyoruz.
-    shaper.functionToUse =
-        [amount, demon](float x) -> float
+    for (int channel = 0;
+         channel < buffer.getNumChannels();
+         ++channel)
     {
-        const float saturated =
-            std::tanh(x * amount);
+        auto* samples = buffer.getWritePointer(channel);
 
-        return x * (1.0f - demon)
-             + saturated * demon;
-    };
+        for (int sample = 0;
+             sample < buffer.getNumSamples();
+             ++sample)
+        {
+            const float x = samples[sample];
 
-    shaper.process(ctx);
+            const float saturated =
+                std::tanh(x * amount);
 
+            samples[sample] =
+                x * (1.0f - demon)
+                + saturated * demon;
+        }
+    }
+
+    // Dynamic low-pass filter
     const float cutoff =
         juce::jmap(
             demon,
@@ -132,8 +143,6 @@ void ZainsDemonAudioProcessor::processBlock(
             4200.0f
         );
 
-    // IIR filtresinin state alanına doğrudan erişmek yerine
-    // yeni katsayıları setCoefficients ile uyguluyoruz.
     auto coefficients =
         juce::dsp::IIR::Coefficients<float>::makeLowPass(
             getSampleRate(),
